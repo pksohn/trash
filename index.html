@@ -46,6 +46,11 @@
             Is trash collection in Arlington, MA delayed this week?
         </h1>
     </header>
+    
+    <!-- Out-of-Range Alert -->
+    <div id="range-alert" class="w-full max-w-xl mb-6 hidden">
+        <!-- Content inserted by JavaScript -->
+    </div>
 
     <!-- Main Status Card -->
     <div id="status-container" class="main-status bg-card-bg p-10 sm:p-14 rounded-2xl shadow-xl text-center mb-8 w-full max-w-lg transition-transform hover:scale-[1.01]">
@@ -131,6 +136,9 @@
 
     <script>
         // --- Configuration ---
+        const CALENDAR_START = new Date(2025, 6, 1); // July 1, 2025 (0-indexed month)
+        const CALENDAR_END = new Date(2026, 5, 30);  // June 30, 2026 (0-indexed month)
+        
         // List of all holidays (delaying and non-delaying)
         // delayType: 'full_week' = shifts Mon-Fri, 'remainder' = shifts days on or after holiday, 'none' = no delay
         // affectsDay is the Day Index (1=Mon, 2=Tue, ..., 5=Fri) that the holiday falls on.
@@ -182,7 +190,7 @@
 
         // Helper: Format date
         function formatDate(dateObj) {
-            return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
         // Helper: Get day name from index (0=Sun, 1=Mon, ..., 6=Sat)
@@ -253,6 +261,33 @@
             const holidayList = document.getElementById('holiday-list');
             const scheduleCard = document.getElementById('delay-schedule-card');
             const scheduleDetails = document.getElementById('schedule-details');
+            const rangeAlert = document.getElementById('range-alert');
+            
+            // 0. Check if the current date is within the known calendar range
+            // Need to compare date objects only (CALENDAR_START/END are already midnight)
+            const isDateInRange = now >= CALENDAR_START && now <= CALENDAR_END;
+            
+            if (!isDateInRange) {
+                // Show Alert
+                rangeAlert.classList.remove('hidden');
+                rangeAlert.innerHTML = `<div class="p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg shadow-sm">
+                    ⚠️ Warning: The selected date (${formatDate(now)}) is outside the published Town Calendar range (Jul 1, 2025 - Jun 30, 2026).
+                </div>`;
+                
+                // Update main status to reflect the uncertainty
+                statusContainer.innerHTML = `
+                    <div class="status-text text-gray-400">?</div>
+                    <div class="text-2xl font-medium text-gray-500 mt-2">Date Outside Calendar Range</div>
+                `;
+
+                // Clear and hide other elements
+                scheduleCard.classList.add('hidden');
+                holidayList.innerHTML = '<li class="py-3 text-center text-gray-400">Cannot determine status outside the calendar range.</li>';
+                return; // Stop execution if out of range
+            } else {
+                rangeAlert.classList.add('hidden'); // Hide if we are in range
+            }
+
 
             // 1. Check for delay this week and identify any holiday
             let isDelayed = false;
@@ -287,9 +322,9 @@
             let secondaryNote = "";
             if (!isDelayed) {
                  // Check if there's a holiday this week that *doesn't* cause a delay
-                 const nonDelayingHoliday = allHolidaysThisWeek.find(h => h.delayType === 'none');
-                 if (nonDelayingHoliday) {
-                    secondaryNote = `<span class="text-gray-400 font-medium"> (despite ${nonDelayingHoliday.name})</span>`;
+                 const nonDelayingHolidays = allHolidaysThisWeek.filter(h => h.delayType === 'none').map(h => h.name);
+                 if (nonDelayingHolidays.length > 0) {
+                    secondaryNote = `<span class="text-gray-400 font-medium"> (despite ${nonDelayingHolidays.join(' and ')})</span>`;
                  }
             }
             

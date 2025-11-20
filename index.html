@@ -350,12 +350,13 @@
             // 3. Populate Upcoming Holidays List
             holidayList.innerHTML = ''; // Clear existing list
             
-            // Filter for future holidays (including the 'now' date)
+            // Filter for future holidays (including the 'now' date) AND within the calendar end date
             const upcoming = delayHolidays.filter(h => {
                 const [y, m, d] = h.date.split('-').map(Number);
                 const hDate = new Date(y, m - 1, d);
                 hDate.setHours(0, 0, 0, 0);
-                return hDate >= now;
+                // Check if the holiday is now or in the future AND within the calendar range
+                return hDate >= now && hDate <= CALENDAR_END; 
             }).sort((a, b) => new Date(a.date) - new Date(b.date))
             .slice(0, 5); // Show next 5
 

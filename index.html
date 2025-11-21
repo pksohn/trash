@@ -62,12 +62,17 @@
         <div class="status-text">...</div>
     </div>
     
-    <!-- Yard Waste Status Container (New Feature) -->
+    <!-- Yard Waste Status Container -->
     <div id="yard-waste-container" class="w-full max-w-lg mb-8 p-4 bg-green-50 rounded-lg shadow-sm text-center text-sm font-medium border border-green-200 hidden">
         <!-- Content inserted by JavaScript -->
     </div>
+    
+    <!-- Christmas Tree Alert Card (New Feature) -->
+    <div id="tree-pickup-alert" class="w-full max-w-lg mb-8 p-4 rounded-xl shadow-md text-center hidden">
+        <!-- Content inserted by JavaScript -->
+    </div>
 
-    <!-- Delay Schedule Card (New Feature) -->
+    <!-- Delay Schedule Card -->
     <div id="delay-schedule-card" class="info-card bg-card-bg p-6 sm:p-8 rounded-xl shadow-md mb-8 w-full max-w-xl hidden">
         <h2 class="text-xl font-bold mb-4 pb-2 border-b-2 border-gray-100 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent-yes mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -167,6 +172,12 @@
         const YARD_WASTE_END_FALL_WEEKLY = new Date(2025, 11, 15); // Mid-December (Weekly)
         const YARD_WASTE_START_SPRING_BIWEEKLY = new Date(2026, 3, 13); // Mid-April (Bi-weekly)
         const YARD_WASTE_END_SPRING = new Date(2026, 5, 30); // End of Calendar (Bi-weekly)
+        
+        // --- Christmas Tree Pickup Configuration (Jan 12-16, 2026) ---
+        const TREE_PICKUP_START = new Date(2026, 0, 12); // Jan 12, 2026 (Monday)
+        const TREE_PICKUP_END = new Date(2026, 0, 16); // Jan 16, 2026 (Friday)
+        const TREE_DISPLAY_START = new Date(2026, 0, 1); // Jan 1, 2026 (Start showing the alert)
+
 
         /**
          * Helper: Get Start/End of current week (Sunday to Saturday) based on the input date.
@@ -333,11 +344,8 @@
             
             const scheduleItems = [];
 
-            // Christmas Tree Pickup (Mid-November 15th to Jan 16th)
-            const CHRISTMAS_TREE_START = new Date(2025, 10, 15); // Nov 15, 2025
-            const CHRISTMAS_TREE_END = new Date(2026, 0, 16);    // Jan 16, 2026
-
-            if (now >= CHRISTMAS_TREE_START && now <= CHRISTMAS_TREE_END) {
+            // Christmas Tree Pickup is Jan 12 — Jan 16, 2026. This is now based on the new constants.
+            if (now >= TREE_DISPLAY_START && now <= TREE_PICKUP_END) {
                  scheduleItems.push(`
                     <li class="py-3 flex justify-between text-lg text-text-dark">
                         <span>🎄 Christmas Tree Pickup</span>
@@ -389,6 +397,8 @@
             const rangeAlert = document.getElementById('range-alert');
             const yardWasteContainer = document.getElementById('yard-waste-container');
             const currentDateDisplay = document.getElementById('current-date-display');
+            const treeAlertContainer = document.getElementById('tree-pickup-alert'); // New element
+
             
             // Update Special Schedules card (for conditional Christmas Tree item and clear calendar notes)
             updateSpecialSchedules(now);
@@ -427,6 +437,7 @@
 
                 scheduleCard.classList.add('hidden');
                 yardWasteContainer.classList.add('hidden'); // Hide yard waste status
+                treeAlertContainer.classList.add('hidden'); // Hide tree alert
                 holidayList.innerHTML = '<li class="py-3 text-center text-gray-400">Cannot determine status outside the calendar range.</li>';
                 return; // Stop execution if out of range
             } else {
@@ -502,7 +513,51 @@
                 </span>
             `;
 
-            // 4. Populate Upcoming Holidays List (existing logic)
+            // 4. Update Christmas Tree Pickup Alert (NEW LOGIC)
+            let treeAlertHtml = '';
+            let treeAlertVisible = false;
+
+            if (now >= TREE_DISPLAY_START && now <= TREE_PICKUP_END) {
+                treeAlertVisible = true;
+                
+                if (now >= TREE_PICKUP_START && now <= TREE_PICKUP_END) {
+                    // DURING THE WEEK (Jan 12 - Jan 16, 2026)
+                    treeAlertHtml = `
+                        <h3 class="text-xl font-bold text-red-700 flex items-center justify-center mb-1">
+                            <span class="text-3xl mr-2">🚨</span>
+                            CHRISTMAS TREE PICKUP WEEK!
+                        </h3>
+                        <p class="text-sm text-red-600 font-medium">
+                            <strong class="underline">This is the only week.</strong> Place tree curbside on your collection day. No plastic bags or stands.
+                        </p>
+                    `;
+                    treeAlertContainer.classList.add('bg-red-100', 'border', 'border-red-400');
+                    treeAlertContainer.classList.remove('bg-blue-100', 'border-blue-400');
+
+                } else if (now < TREE_PICKUP_START) {
+                    // BEFORE THE WEEK (Jan 1 - Jan 11, 2026)
+                    treeAlertHtml = `
+                        <h3 class="text-xl font-bold text-blue-700 flex items-center justify-center mb-1">
+                            <span class="text-3xl mr-2">🎄</span>
+                            Heads Up: Tree Pickup is Coming!
+                        </h3>
+                        <p class="text-sm text-blue-600 font-medium">
+                            Christmas Tree pickup is next week: <strong class="font-bold">Jan 12 – Jan 16, 2026.</strong> This is a one-week only event.
+                        </p>
+                    `;
+                    treeAlertContainer.classList.add('bg-blue-100', 'border', 'border-blue-400');
+                    treeAlertContainer.classList.remove('bg-red-100', 'border-red-400');
+                }
+            }
+
+            if (treeAlertVisible) {
+                treeAlertContainer.innerHTML = treeAlertHtml;
+                treeAlertContainer.classList.remove('hidden');
+            } else {
+                treeAlertContainer.classList.add('hidden');
+            }
+
+            // 5. Populate Upcoming Holidays List (existing logic)
             holidayList.innerHTML = ''; 
             
             const upcoming = delayHolidays.filter(h => {

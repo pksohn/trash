@@ -99,7 +99,7 @@
         <!-- Upcoming Holidays Card -->
         <div class="info-card bg-card-bg p-6 sm:p-8 rounded-xl shadow-md mb-8">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b-2 border-gray-100">
-                Upcoming Holidays (Confirmed Delays)
+                Upcoming Holidays
             </h2>
             <ul id="holiday-list" class="divide-y divide-gray-100">
                 <!-- Holidays will be inserted here by JavaScript -->
@@ -363,7 +363,7 @@
                     <span class="font-bold text-gray-600">From Apr 13, 2026</span>
                 </li>
             `);
-            // 2. Fall Weekly (2025) - Standard date range.
+            // 2. Fall Weekly (2025) - Standard date range. (REMOVED 'Weekly pickup is underway.' DETAIL)
             scheduleItems.push(`
                 <li class="py-3 flex justify-between text-lg text-text-dark">
                     <span>🍂 Yard Waste: Fall Weekly</span>
@@ -397,7 +397,7 @@
             const rangeAlert = document.getElementById('range-alert');
             const yardWasteContainer = document.getElementById('yard-waste-container');
             const currentDateDisplay = document.getElementById('current-date-display');
-            const treeAlertContainer = document.getElementById('tree-pickup-alert'); // New element
+            const treeAlertContainer = document.getElementById('tree-pickup-alert'); 
 
             
             // Update Special Schedules card (for conditional Christmas Tree item and clear calendar notes)
@@ -576,15 +576,15 @@
                 
                 let delayNote = '';
                 if (h.delayType === 'full_week' || h.delayType === 'remainder') {
-                    delayNote = `(<span class="text-accent-yes font-bold">1-Day Delay</span>)`;
+                    delayNote = `<span class="text-accent-yes font-bold">1-Day Delay</span>`;
                 } else {
-                    delayNote = `(<span class="text-accent-no font-bold">No Delay Expected</span>)`;
+                    delayNote = `<span class="text-accent-no font-bold">No Delay</span>`;
                 }
 
                 const li = document.createElement('li');
                 li.className = 'py-3 flex justify-between text-lg';
                 li.innerHTML = `
-                    <span>${h.name} ${delayNote}</span>
+                    <span>${h.name} (${delayNote})</span>
                     <span class="font-bold text-gray-600">${formatDate(hDate)} (${dayName})</span>
                 `;
                 holidayList.appendChild(li);

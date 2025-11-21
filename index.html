@@ -47,6 +47,11 @@
         </h1>
     </header>
     
+    <!-- New Selected Date Indicator -->
+    <div id="current-date-display" class="w-full max-w-xl mb-6 hidden">
+        <!-- Content inserted by JavaScript when a debug date is selected -->
+    </div>
+    
     <!-- Out-of-Range Alert -->
     <div id="range-alert" class="w-full max-w-xl mb-6 hidden">
         <!-- Content inserted by JavaScript -->
@@ -55,6 +60,11 @@
     <!-- Main Status Card -->
     <div id="status-container" class="main-status bg-card-bg p-10 sm:p-14 rounded-2xl shadow-xl text-center mb-8 w-full max-w-lg transition-transform hover:scale-[1.01]">
         <div class="status-text">...</div>
+    </div>
+    
+    <!-- Yard Waste Status Container (New Feature) -->
+    <div id="yard-waste-container" class="w-full max-w-lg mb-8 p-4 bg-green-50 rounded-lg shadow-sm text-center text-sm font-medium border border-green-200 hidden">
+        <!-- Content inserted by JavaScript -->
     </div>
 
     <!-- Delay Schedule Card (New Feature) -->
@@ -72,23 +82,12 @@
     <div class="info-section w-full max-w-xl">
         
         <!-- Special Schedules Card -->
-        <div class="info-card bg-card-bg p-6 sm:p-8 rounded-xl shadow-md mb-6">
+        <div id="special-schedules-card" class="info-card bg-card-bg p-6 sm:p-8 rounded-xl shadow-md mb-6">
             <h2 class="text-xl font-bold mb-4 pb-2 border-b-2 border-gray-100">
                 Special Schedules
             </h2>
-            <ul class="divide-y divide-gray-100">
-                <li class="py-3 flex justify-between text-lg">
-                    <span>🎄 Christmas Tree Pickup</span>
-                    <span class="font-bold text-gray-600">Jan 12 - Jan 16</span>
-                </li>
-                <li class="py-3 flex justify-between text-lg">
-                    <span>🍂 Yard Waste (Fall)</span>
-                    <span class="font-bold text-gray-600">Weekly thru early Dec</span>
-                </li>
-                <li class="py-3 flex justify-between text-lg">
-                    <span>🌱 Yard Waste (Spring)</span>
-                    <span class="font-bold text-gray-600">Starts mid-April</span>
-                </li>
+            <ul id="special-schedules-list" class="divide-y divide-gray-100">
+                <!-- Special items will be dynamically inserted here -->
             </ul>
         </div>
 
@@ -132,7 +131,7 @@
     <footer class="mt-auto text-sm text-gray-400 text-center pt-10 pb-4">
         Based on the 2025-2026 Arlington MA Collection Calendar.<br>
         Always verify with the official PDF if unsure.<br>
-        This website is static and does not update in case of emergency changes to the collection schedule.<br>
+        This information is based on the static PDF schedule and does not update for emergency or real-time changes.
     </footer>
 
     <script>
@@ -159,6 +158,15 @@
             { date: '2026-01-19', name: 'MLK Day', delayType: 'none', affectsDay: 1 }, // Monday
             { date: '2026-07-04', name: 'Independence Day', delayType: 'none', affectsDay: 6 }, // Saturday (6)
         ];
+
+        // --- Yard Waste Configuration (Bi-weekly schedule starts July 7, 2025 - Week A) ---
+        // Yard Waste is Bi-weekly (Apr - Oct, Week A starts July 7, 2025) and Weekly (Nov - Mid Dec)
+        const YARD_WASTE_START_WEEK_A = new Date(2025, 6, 7); // Monday, July 7, 2025
+        const YARD_WASTE_END_BIWEEKLY_FALL = new Date(2025, 9, 31); // End of October (Bi-weekly)
+        const YARD_WASTE_START_WEEKLY = new Date(2025, 10, 1); // Start of November (Weekly)
+        const YARD_WASTE_END_FALL_WEEKLY = new Date(2025, 11, 15); // Mid-December (Weekly)
+        const YARD_WASTE_START_SPRING_BIWEEKLY = new Date(2026, 3, 13); // Mid-April (Bi-weekly)
+        const YARD_WASTE_END_SPRING = new Date(2026, 5, 30); // End of Calendar (Bi-weekly)
 
         /**
          * Helper: Get Start/End of current week (Sunday to Saturday) based on the input date.
@@ -196,8 +204,6 @@
 
         // Helper: Get day name from index (0=Sun, 1=Mon, ..., 6=Sat)
         function getDayName(dayIndex) {
-            // Use modulo operator to handle wrap-around from 6 (Sat) to 0 (Sun) if needed, 
-            // though for collection schedules, indices 1-6 are usually sufficient.
             return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIndex % 7];
         }
 
@@ -250,6 +256,124 @@
             
             return html;
         }
+        
+        /**
+         * Determines the yard waste collection status for the current week.
+         * @param {Date} now - The current or debug date (midnight).
+         * @returns {object} { isPickup: boolean, message: string, detail: string, icon: string }
+         */
+        function getYardWasteStatus(now) {
+            let status = { isPickup: false, message: '', detail: '', icon: '' };
+
+            // Check for the *weekly* Fall period (Nov 1 - Dec 15, 2025)
+            if (now >= YARD_WASTE_START_WEEKLY && now <= YARD_WASTE_END_FALL_WEEKLY) {
+                status.isPickup = true;
+                status.message = 'Yard Waste Weekly pickup is active this week.';
+                status.detail = '🍂 Fall weekly collection runs until mid-December.';
+                status.icon = '🍃';
+                return status;
+            }
+            
+            // Check for the *bi-weekly* Spring period (Mid-April 2026 - Jun 30, 2026)
+            if (now >= YARD_WASTE_START_SPRING_BIWEEKLY && now <= YARD_WASTE_END_SPRING) {
+                // Calculate difference in milliseconds from Week A start date (which is Jul 7, 2025)
+                const msDiff = now.getTime() - YARD_WASTE_START_WEEK_A.getTime();
+                const dayDiff = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+                const weekNumber = Math.floor(dayDiff / 7);
+                const isWeekA = (weekNumber % 2) === 0; // Check parity relative to July 7, 2025
+
+                if (isWeekA) {
+                    status.isPickup = true;
+                    status.message = 'Yard Waste Bi-weekly pickup is active this week.';
+                    status.detail = 'Spring bi-weekly collection is underway.';
+                    status.icon = '🍃';
+                } else {
+                    status.message = 'Yard Waste is NOT collected this week.';
+                    status.detail = 'Spring bi-weekly collection resumes next week.';
+                    status.icon = '🚫';
+                }
+                return status;
+            }
+            
+            // Check for the *bi-weekly* Summer/Fall period (July 1 - Oct 31, 2025)
+            if (now >= CALENDAR_START && now <= YARD_WASTE_END_BIWEEKLY_FALL) {
+                // Calculation is the same as the spring bi-weekly period
+                const msDiff = now.getTime() - YARD_WASTE_START_WEEK_A.getTime();
+                const dayDiff = Math.floor(msDiff / (1000 * 60 * 60 * 24));
+                const weekNumber = Math.floor(dayDiff / 7);
+                const isWeekA = (weekNumber % 2) === 0;
+
+                if (isWeekA) {
+                    status.isPickup = true;
+                    status.message = 'Yard Waste Bi-weekly pickup is active this week.';
+                    status.detail = 'Summer/Fall bi-weekly collection is underway.';
+                    status.icon = '🍃';
+                } else {
+                    status.message = 'Yard Waste is NOT collected this week.';
+                    status.detail = 'Bi-weekly collection resumes next week.';
+                    status.icon = '🚫';
+                }
+                return status;
+            }
+
+            // Default: Outside of all seasonal periods (Dec 16 - Mid-April)
+            status.message = 'Yard Waste collection is currently OFF-SEASON.';
+            status.detail = 'Regular service pauses between mid-December and mid-April.';
+            status.icon = '❄️';
+            return status;
+        }
+
+        /**
+         * Renders the dynamic content for the Special Schedules card.
+         * @param {Date} now - The current or debug date (midnight).
+         */
+        function updateSpecialSchedules(now) {
+            const list = document.getElementById('special-schedules-list');
+            list.innerHTML = '';
+            
+            const scheduleItems = [];
+
+            // Christmas Tree Pickup (Mid-November 15th to Jan 16th)
+            const CHRISTMAS_TREE_START = new Date(2025, 10, 15); // Nov 15, 2025
+            const CHRISTMAS_TREE_END = new Date(2026, 0, 16);    // Jan 16, 2026
+
+            if (now >= CHRISTMAS_TREE_START && now <= CHRISTMAS_TREE_END) {
+                 scheduleItems.push(`
+                    <li class="py-3 flex justify-between text-lg text-text-dark">
+                        <span>🎄 Christmas Tree Pickup</span>
+                        <span class="font-bold text-gray-600">Jan 12 — Jan 16, 2026</span>
+                    </li>
+                 `);
+            }
+            
+            // Add static, seasonal yard waste notes for context, clarifying the calendar cycle
+            
+            // 1. Spring Bi-weekly (2026) - Starts mid-calendar, runs to end of calendar.
+            scheduleItems.push(`
+                <li class="py-3 flex justify-between text-lg text-text-dark">
+                    <span>🌱 Yard Waste: Bi-weekly Collection</span>
+                    <span class="font-bold text-gray-600">From Apr 13, 2026</span>
+                </li>
+            `);
+            // 2. Fall Weekly (2025) - Standard date range.
+            scheduleItems.push(`
+                <li class="py-3 flex justify-between text-lg text-text-dark">
+                    <span>🍂 Yard Waste: Fall Weekly</span>
+                    <span class="font-bold text-gray-600">Nov 1 — Dec 15, 2025</span>
+                </li>
+            `);
+            // 3. Summer/Fall Bi-weekly (2025) - Starts with calendar, runs to end date.
+            scheduleItems.push(`
+                <li class="py-3 flex justify-between text-lg text-text-dark">
+                    <span>☀️ Yard Waste: Bi-weekly Collection</span>
+                    <span class="font-bold text-gray-600">Until Oct 31, 2025</span>
+                </li>
+            `);
+
+
+            list.innerHTML = scheduleItems.join('');
+        }
+
 
         function init() {
             const datePicker = document.getElementById('debug-date-picker');
@@ -263,26 +387,46 @@
             const scheduleCard = document.getElementById('delay-schedule-card');
             const scheduleDetails = document.getElementById('schedule-details');
             const rangeAlert = document.getElementById('range-alert');
+            const yardWasteContainer = document.getElementById('yard-waste-container');
+            const currentDateDisplay = document.getElementById('current-date-display');
             
-            // 0. Check if the current date is within the known calendar range
-            // Need to compare date objects only (CALENDAR_START/END are already midnight)
+            // Update Special Schedules card (for conditional Christmas Tree item and clear calendar notes)
+            updateSpecialSchedules(now);
+
+
+            // 0a. Display selected debug date if active
+            if (debugDate) {
+                currentDateDisplay.classList.remove('hidden');
+                currentDateDisplay.innerHTML = `
+                    <div class="p-3 bg-indigo-100 border border-indigo-300 text-indigo-800 rounded-xl shadow-sm">
+                        📅 Showing schedule for: <strong class="font-bold">${formatDate(now)} (${getDayName(now.getDay())})</strong>
+                        <span class="block mt-1 text-sm text-indigo-700">
+                            Change the date using the picker below, or click "Reset" to go back to today's date.
+                        </span>
+                    </div>
+                `;
+            } else {
+                currentDateDisplay.classList.add('hidden');
+            }
+
+
+            // 0b. Check if the current date is within the known calendar range
             const isDateInRange = now >= CALENDAR_START && now <= CALENDAR_END;
             
             if (!isDateInRange) {
-                // Show Alert
+                // Out-of-Range Handling (existing logic)
                 rangeAlert.classList.remove('hidden');
                 rangeAlert.innerHTML = `<div class="p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg shadow-sm">
                     ⚠️ Warning: The selected date (${formatDate(now)}) is outside the published Town Calendar range (Jul 1, 2025 - Jun 30, 2026).
                 </div>`;
                 
-                // Update main status to reflect the uncertainty
                 statusContainer.innerHTML = `
                     <div class="status-text text-gray-400">?</div>
                     <div class="text-2xl font-medium text-gray-500 mt-2">Date Outside Calendar Range</div>
                 `;
 
-                // Clear and hide other elements
                 scheduleCard.classList.add('hidden');
+                yardWasteContainer.classList.add('hidden'); // Hide yard waste status
                 holidayList.innerHTML = '<li class="py-3 text-center text-gray-400">Cannot determine status outside the calendar range.</li>';
                 return; // Stop execution if out of range
             } else {
@@ -290,12 +434,11 @@
             }
 
 
-            // 1. Check for delay this week and identify any holiday
+            // 1. Check for holiday delay this week
             let isDelayed = false;
             let delayReason = "";
             let holidayThisWeek = null;
 
-            // Find ALL holidays this week (delaying or not)
             const allHolidaysThisWeek = delayHolidays.filter(h => {
                 const [y, m, d] = h.date.split('-').map(Number);
                 const hDate = new Date(y, m - 1, d);
@@ -303,11 +446,9 @@
                 return hDate >= start && hDate <= end;
             });
             
-            // Prioritize a holiday that causes a delay
             const delayingHoliday = allHolidaysThisWeek.find(h => {
                 const [y, m, d] = h.date.split('-').map(Number);
                 const hDate = new Date(y, m-1, d);
-                // Check if it's a weekday holiday that is *not* type 'none'
                 return h.delayType !== 'none' && hDate.getDay() >= 1 && hDate.getDay() <= 5;
             });
 
@@ -319,10 +460,9 @@
                 delayReason = `Due to ${delayingHoliday.name} on ${getDayName(hDate.getDay())}`;
             }
 
-            // 2. Update Main Display
+            // 2. Update Main Display (Trash Delay)
             let secondaryNote = "";
             if (!isDelayed) {
-                 // Check if there's a holiday this week that *doesn't* cause a delay
                  const nonDelayingHolidays = allHolidaysThisWeek.filter(h => h.delayType === 'none').map(h => h.name);
                  if (nonDelayingHolidays.length > 0) {
                     secondaryNote = `<span class="text-gray-400 font-medium"> (despite ${nonDelayingHolidays.join(' and ')})</span>`;
@@ -334,7 +474,6 @@
                     <div class="status-text status-yes">YES</div>
                     <div class="text-2xl font-medium text-gray-500 mt-2">${delayReason}</div>
                 `;
-                // Show the schedule card
                 scheduleCard.classList.remove('hidden');
                 scheduleDetails.innerHTML = calculateSchedule(holidayThisWeek);
 
@@ -343,22 +482,37 @@
                     <div class="status-text status-no">NO</div>
                     <div class="text-2xl font-medium text-gray-500 mt-2">Regular Schedule ${secondaryNote}</div>
                 `;
-                // Hide the schedule card
                 scheduleCard.classList.add('hidden');
             }
-
-            // 3. Populate Upcoming Holidays List
-            holidayList.innerHTML = ''; // Clear existing list
             
-            // Filter for future holidays (including the 'now' date) AND within the calendar end date
+            // 3. Update Yard Waste Status
+            const ywStatus = getYardWasteStatus(now);
+            yardWasteContainer.classList.remove('hidden');
+
+            const ywColor = ywStatus.isPickup ? 'text-green-700' : 'text-yellow-700';
+            const ywBg = ywStatus.isPickup ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200';
+            
+            yardWasteContainer.className = `w-full max-w-lg mb-8 p-4 rounded-xl shadow-sm text-center font-medium border flex items-center justify-center ${ywBg} ${ywColor}`;
+
+            yardWasteContainer.innerHTML = `
+                <span class="text-2xl mr-3">${ywStatus.icon}</span>
+                <span>
+                    <strong class="text-base">${ywStatus.message}</strong>
+                    <span class="block text-xs font-normal text-gray-500">${ywStatus.detail}</span>
+                </span>
+            `;
+
+            // 4. Populate Upcoming Holidays List (existing logic)
+            holidayList.innerHTML = ''; 
+            
             const upcoming = delayHolidays.filter(h => {
                 const [y, m, d] = h.date.split('-').map(Number);
                 const hDate = new Date(y, m - 1, d);
                 hDate.setHours(0, 0, 0, 0);
-                // Check if the holiday is now or in the future AND within the calendar range
+                // Filter for holidays now or in the future AND within the calendar range
                 return hDate >= now && hDate <= CALENDAR_END; 
             }).sort((a, b) => new Date(a.date) - new Date(b.date))
-            .slice(0, 5); // Show next 5
+            .slice(0, 5);
 
             upcoming.forEach(h => {
                 const [y, m, d] = h.date.split('-').map(Number);
@@ -389,13 +543,11 @@
         // --- Event Listeners for Debug Feature ---
         const debugContent = document.getElementById('debug-content');
         const toggleButton = document.getElementById('debug-toggle');
-        // Removed toggleIcon reference as it is no longer used.
 
         toggleButton.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent the <a> tag from attempting to navigate
+            e.preventDefault();
             debugContent.classList.toggle('hidden');
             
-            // Update the link text to reflect the state
             if (debugContent.classList.contains('hidden')) {
                 toggleButton.textContent = 'Click to change date';
             } else {
@@ -406,7 +558,6 @@
         document.getElementById('debug-date-picker').addEventListener('change', init);
         
         document.getElementById('reset-date-btn').addEventListener('click', () => {
-             // Clear the date input and re-run init() to use the actual current date
              document.getElementById('debug-date-picker').value = '';
              init();
         });

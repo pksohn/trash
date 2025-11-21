@@ -285,7 +285,7 @@
         function getYardWasteStatus(now) {
             let status = { isPickup: false, message: '', detail: '', icon: '' };
 
-            // Check for the *weekly* Fall period (Nov 1 - Dec 15, 2025)
+            // Check for the *weekly* Fall period (Nov 1 - Dec 12, 2025)
             if (now >= YARD_WASTE_START_WEEKLY && now <= YARD_WASTE_END_FALL_WEEKLY) {
                 status.isPickup = true;
                 status.message = 'Yard Waste Weekly pickup is active this week.';
@@ -376,7 +376,7 @@
             scheduleItems.push(`
                 <li class="py-3 flex justify-between text-lg text-text-dark">
                     <span>🍂 Yard Waste: Fall Weekly</span>
-                    <span class="font-bold text-gray-600">Nov 1 — Dec 15, 2025</span>
+                    <span class="font-bold text-gray-600">Nov 1 — Dec 12, 2025</span>
                 </li>
             `);
             // 3. Summer/Fall Bi-weekly (2025) - Starts with calendar, runs to end date.
